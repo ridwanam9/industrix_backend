@@ -9,14 +9,25 @@ exports.findAll = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const search = req.query.search || "";
+    const status = req.query.status;        // completed / pending
+    const category = req.query.category;    // category_id
+    const priority = req.query.priority;    // high / medium / low
+
+    let where = {
+      title: { [Op.iLike]: `%${search}%` }
+    };
+
+    if (status === "completed") where.completed = true;
+    if (status === "pending") where.completed = false;
+
+    if (category) where.category_id = category;
+    if (priority) where.priority = priority;
 
     const { rows, count } = await Todo.findAndCountAll({
-      where: {
-        title: { [Op.iLike]: `%${search}%` }
-      },
+      where,
       include: [Category],
       limit,
-      offset
+      offset,
     });
 
     res.json({
@@ -32,6 +43,7 @@ exports.findAll = async (req, res) => {
     res.status(500).send(err.message);
   }
 };
+
 
 // POST /api/todos
 exports.create = async (req, res) => {
